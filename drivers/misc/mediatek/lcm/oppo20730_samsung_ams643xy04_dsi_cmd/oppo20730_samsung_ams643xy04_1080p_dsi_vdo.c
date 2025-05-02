@@ -1959,7 +1959,7 @@ static void lcm_init_power(void)
 	MDELAY(2);
 	SET_RESET_PIN(1);
 	MDELAY(2);
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void poweron_before_ulps(void)
@@ -1970,7 +1970,7 @@ static void poweron_before_ulps(void)
 	MDELAY(2);
 	SET_RESET_PIN(1);
 	MDELAY(2);
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 
@@ -1979,7 +1979,7 @@ static void lcm_suspend_power(void)
 	aod_in = false;
 	aod_state = false;
 	aod_out = true;
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void poweroff_after_ulps(void)
@@ -1987,7 +1987,7 @@ static void poweroff_after_ulps(void)
 	SET_RESET_PIN(0);
 	MDELAY(12);
 	lcm_panel_ldo1_disable(NULL);
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 
@@ -1998,20 +1998,20 @@ static void lcm_aod(int enter)
 		aod_out = false;
 
 #if (USE_DSI_SET_CMDQ_V4)
-		pr_info("lcm_aod_in_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod_in_setting_v3));
+		pr_debug("lcm_aod_in_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod_in_setting_v3));
 		dsi_set_cmdq_V4(lcm_aod_in_setting_v3, ARRAY_SIZE(lcm_aod_in_setting_v3), 0);
 #else
 		push_table(lcm_aod_in_setting, sizeof(lcm_aod_in_setting) / sizeof(struct LCM_setting_table), 1);
 #endif
 	} else {
 #if (USE_DSI_SET_CMDQ_V4)
-		pr_info("[soso] lcm_aod_out_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod_out_setting_v3));
+		pr_debug("[soso] lcm_aod_out_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod_out_setting_v3));
 		dsi_set_cmdq_V4(lcm_aod_out_setting_v3, ARRAY_SIZE(lcm_aod_out_setting_v3), 0);
 #else
 		push_table(lcm_aod_out_setting, sizeof(lcm_aod_out_setting) / sizeof(struct LCM_setting_table), 1);
 #endif
 	}
-	pr_info("enter = %d \n", enter);
+	pr_debug("enter = %d \n", enter);
 }
 
 static void lcm_aod2(int enter)
@@ -2021,20 +2021,20 @@ static void lcm_aod2(int enter)
                 aod_out = false;
 
 #if (USE_DSI_SET_CMDQ_V4)
-                pr_info("lcm_aod2_in_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod2_in_setting_v3));
+                pr_debug("lcm_aod2_in_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod2_in_setting_v3));
                 dsi_set_cmdq_V4(lcm_aod2_in_setting_v3, ARRAY_SIZE(lcm_aod2_in_setting_v3), 0);
 #else
                 push_table(lcm_aod2_in_setting, sizeof(lcm_aod2_in_setting) / sizeof(struct LCM_setting_table), 1);
 #endif
         } else {
 #if (USE_DSI_SET_CMDQ_V4)
-                pr_info("[soso] lcm_aod2_out_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod2_out_setting_v3));
+                pr_debug("[soso] lcm_aod2_out_setting_v3 =  %d \n", ARRAY_SIZE(lcm_aod2_out_setting_v3));
                 dsi_set_cmdq_V4(lcm_aod2_out_setting_v3, ARRAY_SIZE(lcm_aod2_out_setting_v3), 0);
 #else
                 push_table(lcm_aod_out_setting, sizeof(lcm_aod_out_setting) / sizeof(struct LCM_setting_table), 1);
 #endif
         }
-        pr_info("enter = %d \n", enter);
+        pr_debug("enter = %d \n", enter);
 }
 static void lcm_aod_display_on(void *handle)
 {
@@ -2045,7 +2045,7 @@ static void lcm_aod_display_on(void *handle)
 		push_table22(handle, lcm_aod_display_on_setting, sizeof(lcm_aod_display_on_setting) / sizeof(struct LCM_setting_table), 1);
 #endif
 	}
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void lcm_aod_out(void *handle)
@@ -2060,20 +2060,20 @@ static void lcm_aod_out(void *handle)
 		}
 	}
 
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void disp_lcm_aod_from_display_on(void)
 {
 	aod_state = true;
 	aod_out = false;
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void lcm_resume_power(void)
 {
 	lcm_init_power();
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 
@@ -2082,7 +2082,7 @@ static void lcm_init(void)
 	MDELAY(5);
 	push_table(lcm_initialization_cmd_setting, sizeof(lcm_initialization_cmd_setting) / sizeof(struct LCM_setting_table), 1);
 	hbm_en = false;
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void lcm_init2(void)
@@ -2090,26 +2090,26 @@ static void lcm_init2(void)
         MDELAY(5);
         push_table(lcm_initialization2_cmd_setting, sizeof(lcm_initialization2_cmd_setting) / sizeof(struct LCM_setting_table), 1);
         hbm_en = false;
-        pr_info(">>>\n");
+        pr_debug(">>>\n");
 }
 
 static void lcm_suspend(void)
 {
 	push_table(lcm_sleep_in_setting, sizeof(lcm_sleep_in_setting) / sizeof(struct LCM_setting_table), 1);
 	hbm_en = false;
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void lcm_resume(void)
 {
 	lcm_init();
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 static void lcm_resume2(void)
 {
         lcm_init2();
-        pr_info("\n");
+        pr_debug("\n");
 }
 
 static void lcm_update(unsigned int x, unsigned int y, unsigned int width, unsigned int height)
@@ -2142,7 +2142,7 @@ static void lcm_update(unsigned int x, unsigned int y, unsigned int width, unsig
 
 	data_array[0] = 0x002c3909;
 	dsi_set_cmdq(data_array, 1, 0);
-	pr_info("\n");
+	pr_debug("\n");
 }
 
 #define OPPO_DC_BACKLIGHT_THRESHOLD 1100
@@ -2201,7 +2201,7 @@ dc_disable:
 	}
 
 	oppo_dc_alpha = 0;
-	pr_info("\n");
+	pr_debug("\n");
 	return level;
 }
 
@@ -2210,7 +2210,7 @@ static void lcm_setbrightness(void *handle, unsigned int level)
 	unsigned int bl_msb = 0;
 	unsigned int bl_lsb = 0;
 	unsigned int hbm_brightness = 0;
-	pr_info("level is %d\n", level);
+	pr_debug("level is %d\n", level);
 
 	/*
 	if (!primary_display_is_video_mode()) {
@@ -2247,7 +2247,7 @@ static void lcm_setbacklight_cmdq(void *handle, unsigned int level)
 {
 	unsigned int mapped_level = 0;
 
-	pr_info("level = %d\n", level);
+	pr_debug("level = %d\n", level);
 
 	if (!islcmconnected) {
 		return;
@@ -2303,7 +2303,7 @@ static void lcm_set_hbm_mode(void *handle, unsigned int hbm_level)
 
 	/* hbm_en is 670nit,no need response hbm node set */
 	if (hbm_en) {
-		pr_info("return for hbm_en\n");
+		pr_debug("return for hbm_en\n");
 		return;
 	}
 
@@ -2327,7 +2327,7 @@ static void lcm_set_hbm_mode(void *handle, unsigned int hbm_level)
 		push_table22(handle, lcm_normal_HBM_on_setting,
 			 sizeof(lcm_normal_HBM_on_setting)/sizeof(lcm_normal_HBM_on_setting[0]), 1);
 	}
-	pr_info("hbm_level = %d\n", hbm_level);
+	pr_debug("hbm_level = %d\n", hbm_level);
 }
 
 static bool lcm_get_hbm_state(void)
@@ -2344,7 +2344,7 @@ static bool lcm_set_hbm_wait_ramless(bool wait, void *qhandle)
 {
 	bool old = hbm_wait;
 
-	pr_info("\n");
+	pr_debug("\n");
 
 	hbm_wait = wait;
 
@@ -2391,7 +2391,7 @@ static bool lcm_set_hbm_cmdq(bool en, void *qhandle)
 	lcm_set_hbm_wait_ramless(true, qhandle);
 
 done:
-	pr_info("en = %d, %s\n", en, qhandle ? "wfp back aod!" : "wfp back aod from doze_suspend!");
+	pr_debug("en = %d, %s\n", en, qhandle ? "wfp back aod!" : "wfp back aod from doze_suspend!");
 	return old;
 }
 
@@ -2399,7 +2399,7 @@ done:
 /* mode 0: video->cmd, mode 1: cmd->video */
 static void lcm_set_aod_cv_mode(void *qhandle, unsigned int mode)
 {
-	pr_info("mode = %d\n", mode);
+	pr_debug("mode = %d\n", mode);
 	if (mode == 0) {
 		push_table_on_ramless_aod(qhandle, lcm_normal_to_aod_setting,
 			sizeof(lcm_normal_to_aod_setting)/sizeof(lcm_normal_to_aod_setting[0]), 1);
@@ -2410,7 +2410,7 @@ static void lcm_set_aod_cv_mode(void *qhandle, unsigned int mode)
 }
 static void lcm_set_aod_cv_mode2(void *qhandle, unsigned int mode)
 {
-        pr_info("mode = %d\n", mode);
+        pr_debug("mode = %d\n", mode);
         if (mode == 0) {
                 push_table_on_ramless_aod(qhandle, lcm_normal_to_aod_setting2,
                         sizeof(lcm_normal_to_aod_setting2)/sizeof(lcm_normal_to_aod_setting2[0]), 1);
@@ -2432,7 +2432,7 @@ static void lcm_set_aod_brightness(void *qhandle, unsigned int mode)
 	}
 	aod_light_brightness_mode = mode;
 
-	pr_info("mode = %d\n", mode);
+	pr_debug("mode = %d\n", mode);
 }
 
 #ifndef OPLUS_BUG_STABILITY
@@ -2446,7 +2446,7 @@ int parse_input(void *handle, const char *buf)
 	char *token = NULL;
 	unsigned long value = 0;
 
-	pr_info("[soso][DISP] parse_input %s\n", buf);
+	pr_debug("[soso][DISP] parse_input %s\n", buf);
 
 	input[strlen(input)] = '\0';
 
@@ -2454,7 +2454,7 @@ int parse_input(void *handle, const char *buf)
 		token = strsep(&input, " ");
 		retval = kstrtoul(token, 16, &value);
 		if (retval < 0) {
-			pr_info("[soso] %s: Failed to convert from string (%s) to hex number\n", __func__, token);
+			pr_debug("[soso] %s: Failed to convert from string (%s) to hex number\n", __func__, token);
 			continue;
 		}
 		debug.buffer[index] = (unsigned char)value;
@@ -2473,11 +2473,11 @@ int parse_input(void *handle, const char *buf)
 		debug.cmds[cmdindex] = debug.buffer[cmdindex+1];
 		cmdindex++;
 	}
-	pr_info("[soso] %s debug.buffer[0] is 0x%x debug.length = %d \n",
+	pr_debug("[soso] %s debug.buffer[0] is 0x%x debug.length = %d \n",
 		__func__, debug.buffer[0], debug.length);
 
 	while (ret < debug.length) {
-		pr_info("[soso] debug.cmds is 0x%x\n",  debug.cmds[ret]);
+		pr_debug("[soso] debug.cmds is 0x%x\n",  debug.cmds[ret]);
 		ret++;
 	}
 	dsi_set_cmdq_V22(handle, debug.buffer[0], debug.length, debug.cmds, 1);
@@ -2503,7 +2503,7 @@ int parse_reg_output(void *handle, const char *buf)
 		token = strsep(&input, " ");
 		retval = kstrtoul(token, 16, &value);
 		if (retval < 0) {
-			pr_info("[soso] %s: Failed to convert from string (%s) to hex number\n",
+			pr_debug("[soso] %s: Failed to convert from string (%s) to hex number\n",
 				__func__, token);
 			continue;
 		}
@@ -2521,20 +2521,20 @@ int parse_reg_output(void *handle, const char *buf)
 
 	reg_rlengh = debug_read.length;
 
-	pr_info("[soso] %s debug.buffer[0] is 0x%x debug.length = %d \n",
+	pr_debug("[soso] %s debug.buffer[0] is 0x%x debug.length = %d \n",
 		__func__, debug_read.buffer[0], debug_read.length);
 
 	retval = read_reg_v2(debug_read.buffer[0],
 				debug_read.read_buffer, debug_read.length);
 
 	if (retval < 0) {
-		pr_info("[soso] %s error can not read the reg 0x%x \n",
+		pr_debug("[soso] %s error can not read the reg 0x%x \n",
 			__func__, debug_read.buffer[0]);
 		return -1;
 	}
 
 	while (ret < debug_read.length) {
-		pr_info("[soso] reg cmd 0x%x read_buffer is 0x%x \n",
+		pr_debug("[soso] reg cmd 0x%x read_buffer is 0x%x \n",
 				debug_read.buffer[0], debug_read.read_buffer[ret]);
 		read_buffer[ret] = debug_read.read_buffer[ret];
 		ret++;
@@ -2594,7 +2594,7 @@ static void lcm_set_aod_area(void *handle, unsigned char *area)
 {
 	unsigned int i = 0;
 
-	pr_info("aod area update! islcmconnected = %d\n", islcmconnected);
+	pr_debug("aod area update! islcmconnected = %d\n", islcmconnected);
 
 	if (!islcmconnected) {
 		return;
@@ -2618,7 +2618,7 @@ static void lcm_set_aod_area(void *handle, unsigned char *area)
 
 void lcm_set_aod_area_test(void *handle)
 {
-	pr_info("\n");
+	pr_debug("\n");
 	if (!islcmconnected) {
 		return;
 	}
