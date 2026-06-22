@@ -5186,12 +5186,16 @@ EXPORT_SYMBOL_GPL(generic_access_phys);
 int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
 		unsigned long addr, void *buf, int len, unsigned int gup_flags)
 {
-	struct vm_area_struct *vma = NULL;
+	struct vm_area_struct *vma;
 	void *old_buf = buf;
 	int write = gup_flags & FOLL_WRITE;
 
 	if (down_read_killable(&mm->mmap_sem))
 		return 0;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+	vma = find_vma(mm, addr);
+#endif
 
 	/* ignore errors, just check how much was successfully transferred */
 	while (len) {
