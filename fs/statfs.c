@@ -9,6 +9,9 @@
 #include <linux/security.h>
 #include <linux/uaccess.h>
 #include <linux/compat.h>
+#if defined(CONFIG_KSU_SUSFS_SUS_MOUNT) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
+#include <linux/susfs_def.h>
+#endif
 #include "internal.h"
 
 static int flags_by_mnt(int mnt_flags)
@@ -67,9 +70,25 @@ static int statfs_by_dentry(struct dentry *dentry, struct kstatfs *buf)
 	return retval;
 }
 
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+extern int susfs_open_redirect_spoof_vfs_statfs(struct inode *inode, struct kstatfs *buf);
+#endif
+
 int vfs_statfs(const struct path *path, struct kstatfs *buf)
 {
 	int error;
+
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+	struct inode *inode = path->dentry->d_inode;
+
+	if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
+		if (susfs_open_redirect_spoof_vfs_statfs(inode, buf))
+			goto orig_flow;
+		return 0;
+	}
+
+orig_flow:
+#endif
 
 	error = statfs_by_dentry(path->dentry, buf);
 	if (!error)

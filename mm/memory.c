@@ -82,6 +82,10 @@
 
 #include "internal.h"
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+#include <linux/susfs_def.h>
+#endif
+
 #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 #define SPECULATIVE_PAGE_FAULT_SUPPORT_FILEMAP 1
 int sysctl_speculative_page_fault = 1;
@@ -5182,7 +5186,7 @@ EXPORT_SYMBOL_GPL(generic_access_phys);
 int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
 		unsigned long addr, void *buf, int len, unsigned int gup_flags)
 {
-	struct vm_area_struct *vma;
+	struct vm_area_struct *vma = NULL;
 	void *old_buf = buf;
 	int write = gup_flags & FOLL_WRITE;
 
@@ -5195,6 +5199,10 @@ int __access_remote_vm(struct task_struct *tsk, struct mm_struct *mm,
 		void *maddr;
 		struct page *page = NULL;
 
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+		if (vma && vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
+			break;
+#endif
 		ret = get_user_pages_remote(tsk, mm, addr, 1,
 				gup_flags, &page, &vma, NULL);
 		if (ret <= 0) {
