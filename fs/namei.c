@@ -1655,6 +1655,13 @@ static struct dentry *__lookup_hash(const struct qstr *name,
 		dput(dentry);
 		dentry = old;
 	}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (dentry && !IS_ERR(dentry) && dentry->d_inode &&
+	    susfs_is_inode_sus_path(dentry->d_inode)) {
+		dput(dentry);
+		return ERR_PTR(-ENOENT);
+	}
+#endif
 	return dentry;
 }
 
@@ -1784,6 +1791,13 @@ again:
 				dentry = ERR_PTR(error);
 			}
 		}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (!IS_ERR(dentry) && dentry->d_inode &&
+		    susfs_is_inode_sus_path(dentry->d_inode)) {
+			dput(dentry);
+			return ERR_PTR(-ENOENT);
+		}
+#endif
 	} else {
 		old = inode->i_op->lookup(inode, dentry, flags);
 		d_lookup_done(dentry);
@@ -3327,6 +3341,12 @@ static int lookup_open(struct nameidata *nd, struct path *path,
 			dentry = d_alloc_parallel(dir, &nd->last, &wq);
 			if (IS_ERR(dentry))
 				return PTR_ERR(dentry);
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+			if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+				dput(dentry);
+				return -ENOENT;
+			}
+#endif
 		}
 		if (d_in_lookup(dentry))
 			break;
@@ -3341,6 +3361,12 @@ static int lookup_open(struct nameidata *nd, struct path *path,
 		dentry = NULL;
 	}
 	if (dentry->d_inode) {
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (susfs_is_inode_sus_path(dentry->d_inode)) {
+			dput(dentry);
+			return -ENOENT;
+		}
+#endif
 		/* Cached positive dentry: will open in f_op->open */
 		goto out_no_open;
 	}
@@ -3401,6 +3427,12 @@ no_open:
 			dput(dentry);
 			dentry = res;
 		}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+			dput(dentry);
+			return -ENOENT;
+		}
+#endif
 	}
 
 	/* Negative dentry, just create the file */
@@ -4954,6 +4986,10 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 
 	if (unlikely(!(inode->i_opflags & IOP_DEFAULT_READLINK))) {
 		if (unlikely(inode->i_op->readlink)) {
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+			if (susfs_is_inode_sus_path(inode))
+				return -ENOENT;
+#endif
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 			if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
 				res = susfs_open_redirect_spoof_vfs_readlink(inode, buffer, buflen);
@@ -4978,6 +5014,12 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 		if (IS_ERR(link))
 			return PTR_ERR(link);
 	}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (susfs_is_inode_sus_path(inode)) {
+		do_delayed_call(&done);
+		return -ENOENT;
+	}
+#endif
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 	if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
 		res = susfs_open_redirect_spoof_vfs_readlink(inode, buffer, buflen);
