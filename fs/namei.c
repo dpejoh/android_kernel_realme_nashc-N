@@ -1684,7 +1684,8 @@ static int lookup_fast(struct nameidata *nd,
 		bool negative;
 		dentry = __d_lookup_rcu(parent, &nd->last, &seq);
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-		if (dentry && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode))
+		if (!(nd->flags & LOOKUP_PARENT) && dentry && dentry->d_inode &&
+		    susfs_is_inode_sus_path(dentry->d_inode))
 			dentry = NULL;
 #endif
 		if (unlikely(!dentry)) {
@@ -1736,7 +1737,8 @@ static int lookup_fast(struct nameidata *nd,
 		if (unlikely(!dentry))
 			return 0;
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-		if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+		if (!(nd->flags & LOOKUP_PARENT) && dentry->d_inode &&
+		    susfs_is_inode_sus_path(dentry->d_inode)) {
 			dput(dentry);
 			return 0;
 		}
@@ -1792,7 +1794,7 @@ again:
 			}
 		}
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-		if (!IS_ERR(dentry) && dentry->d_inode &&
+		if (!(flags & LOOKUP_PARENT) && !IS_ERR(dentry) && dentry->d_inode &&
 		    susfs_is_inode_sus_path(dentry->d_inode)) {
 			dput(dentry);
 			return ERR_PTR(-ENOENT);
@@ -1806,7 +1808,8 @@ again:
 			dentry = old;
 		}
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-		if (!IS_ERR(dentry) && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+		if (!(flags & LOOKUP_PARENT) && !IS_ERR(dentry) && dentry->d_inode &&
+		    susfs_is_inode_sus_path(dentry->d_inode)) {
 			dput(dentry);
 			return ERR_PTR(-ENOENT);
 		}
@@ -3331,7 +3334,8 @@ static int lookup_open(struct nameidata *nd, struct path *path,
 	file->f_mode &= ~FMODE_CREATED;
 	dentry = d_lookup(dir, &nd->last);
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-	if (dentry && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+	if (!(nd->flags & LOOKUP_PARENT) && dentry && dentry->d_inode &&
+	    susfs_is_inode_sus_path(dentry->d_inode)) {
 		dput(dentry);
 		return -ENOENT;
 	}
@@ -3342,7 +3346,8 @@ static int lookup_open(struct nameidata *nd, struct path *path,
 			if (IS_ERR(dentry))
 				return PTR_ERR(dentry);
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-			if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+			if (!(nd->flags & LOOKUP_PARENT) && dentry->d_inode &&
+			    susfs_is_inode_sus_path(dentry->d_inode)) {
 				dput(dentry);
 				return -ENOENT;
 			}
@@ -3362,7 +3367,8 @@ static int lookup_open(struct nameidata *nd, struct path *path,
 	}
 	if (dentry->d_inode) {
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-		if (susfs_is_inode_sus_path(dentry->d_inode)) {
+		if (!(nd->flags & LOOKUP_PARENT) &&
+		    susfs_is_inode_sus_path(dentry->d_inode)) {
 			dput(dentry);
 			return -ENOENT;
 		}
@@ -3428,7 +3434,8 @@ no_open:
 			dentry = res;
 		}
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-		if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+		if (!(nd->flags & LOOKUP_PARENT) && dentry->d_inode &&
+		    susfs_is_inode_sus_path(dentry->d_inode)) {
 			dput(dentry);
 			return -ENOENT;
 		}
