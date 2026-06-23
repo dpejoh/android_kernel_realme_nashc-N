@@ -1330,8 +1330,13 @@ struct task_struct {
 	struct mutex			futex_exit_mutex;
 #endif
 
+#ifdef CONFIG_KSU_SUSFS
+	ANDROID_KABI_USE(7, u64 susfs_task_state);
+	ANDROID_KABI_USE(8, u64 susfs_last_fake_mnt_id);
+#else
 	ANDROID_KABI_RESERVE(7);
 	ANDROID_KABI_RESERVE(8);
+#endif
 #ifdef CONFIG_MTK_TASK_TURBO
 	unsigned short turbo:1;
 	unsigned short render:1;
@@ -1347,6 +1352,13 @@ struct task_struct {
 	 * they are included in the randomized portion of task_struct.
 	 */
 	randomized_struct_fields_end
+
+#if defined(CONFIG_KSU_SUSFS) && !defined(ANDROID_KABI_RESERVE)
+	u64 susfs_task_state;
+#endif
+#if defined(CONFIG_KSU_SUSFS) && !defined(ANDROID_KABI_RESERVE)
+	u64 susfs_last_fake_mnt_id;
+#endif
 
 	/* CPU-specific state of this task: */
 	struct thread_struct		thread;

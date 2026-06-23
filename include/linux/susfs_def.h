@@ -54,9 +54,7 @@
 #define FUSE_SUPER_MAGIC 0x65735546
 #endif
 /*
- * inode->i_state => A 'unsigned long' type storing flag 'AS_FLAGS_', bit 1 to 31 is not usable since 6.12
- * nd->state => storing flag 'ND_STATE_'
- * nd->flags => storing flag 'ND_FLAGS_'
+ * inode->i_mapping->flags => A 'unsigned long' type storing flag 'AS_FLAGS_'
  * task_struct->thread_info.flags => storing flag 'TIF_'
  */
  // thread_info->flags is unsigned long :D
@@ -67,10 +65,6 @@
 #define AS_FLAGS_SUS_KSTAT 35
 #define AS_FLAGS_OPEN_REDIRECT 36
 #define AS_FLAGS_SUS_MAP 39
-
-#define ND_STATE_LOOKUP_LAST 32
-#define ND_STATE_OPEN_LAST 64
-#define ND_FLAGS_LOOKUP_LAST		0x2000000
  
 #define MAGIC_MOUNT_WORKDIR "/debug_ramdisk/workdir"
 

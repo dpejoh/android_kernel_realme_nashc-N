@@ -19,6 +19,9 @@
 #include <linux/shmem_fs.h>
 #include <linux/uaccess.h>
 #include <linux/mm_inline.h>
+#if defined(CONFIG_KSU_SUSFS_SUS_KSTAT) || defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
+#include <linux/susfs_def.h>
+#endif
 #include <linux/pkeys.h>
 
 #include <asm/elf.h>
@@ -347,6 +350,13 @@ static void show_vma_header_prefix(struct seq_file *m,
 	seq_putc(m, ' ');
 }
 
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+extern void susfs_sus_kstat_spoof_show_map_vma(struct inode *inode, dev_t *out_dev, unsigned long *out_ino);
+#endif
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+extern int susfs_open_redirect_spoof_show_map_vma(struct inode *inode, unsigned long *out_ino, dev_t *out_dev, char *spoofed_name);
+#endif
+
 static void
 show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
 {
@@ -361,8 +371,15 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
 
 	if (file) {
 		struct inode *inode = file_inode(vma->vm_file);
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+		if (SUSFS_IS_INODE_SUS_MAP(inode))
+			return;
+#endif
 		dev = inode->i_sb->s_dev;
 		ino = inode->i_ino;
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
+#endif
 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
 	}
 
@@ -841,6 +858,12 @@ static void __show_smap(struct seq_file *m, const struct mem_size_stats *mss)
 static int show_smap(struct seq_file *m, void *v)
 {
 	struct vm_area_struct *vma = v;
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+	if (vma->vm_file) {
+		if (SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
+			return 0;
+	}
+#endif
 	struct mem_size_stats mss;
 
 	memset(&mss, 0, sizeof(mss));
@@ -900,6 +923,14 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
 	hold_task_mempolicy(priv);
 
 	for (vma = priv->mm->mmap; vma;) {
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+		if (vma->vm_file &&
+			SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file))) {
+			last_vma_end = vma->vm_end;
+			vma = vma->vm_next;
+			continue;
+		}
+#endif
 		smap_gather_stats(vma, &mss);
 		last_vma_end = vma->vm_end;
 
@@ -1379,6 +1410,14 @@ static int pagemap_pte_hole(unsigned long start, unsigned long end,
 
 		if (!vma)
 			break;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
+		if (vma->vm_file &&
+			SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file))) {
+			addr = vma->vm_end;
+			continue;
+		}
+#endif
 
 		/* Addresses in the VMA. */
 		if (vma->vm_flags & VM_SOFTDIRTY)

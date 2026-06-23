@@ -32,6 +32,10 @@
 #include <linux/dnotify.h>
 #include <linux/compat.h>
 
+#ifdef CONFIG_KSU_SUSFS
+#include <linux/susfs_def.h>
+#endif
+
 #include "internal.h"
 
 int do_truncate2(struct vfsmount *mnt, struct dentry *dentry, loff_t length,
@@ -371,6 +375,19 @@ long do_faccessat(int dfd, const char __user *filename, int mode)
 	{
 		int tmp_mode = mode;
 		ksu_handle_faccessat(&dfd, &filename, &tmp_mode, NULL);
+	}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS
+	{
+		extern struct static_key_false ksu_su_compat_enabled;
+		extern bool __ksu_is_allow_uid_for_current(uid_t uid);
+		extern int ksu_handle_faccessat(int *dfd, const char __user **filename_user, int *mode, int *flags);
+
+		if (static_branch_likely(&ksu_su_compat_enabled)) {
+			if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val)))
+				ksu_handle_faccessat(&dfd, &filename, &mode, NULL);
+		}
 	}
 #endif
 
@@ -1100,6 +1117,9 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
 }
 EXPORT_SYMBOL(file_open_root);
 
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+extern struct filename *susfs_open_redirect_spoof_do_sys_openat(struct inode *inode);
+#endif
 long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 {
 	struct open_flags op;
@@ -1114,8 +1134,28 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 		return PTR_ERR(tmp);
 
 	fd = get_unused_fd_flags(flags);
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+	struct filename *fake_filename = NULL;
+	bool is_inode_open_redirect = false;
+retry:
+#endif
 	if (fd >= 0) {
 		struct file *f = do_filp_open(dfd, tmp, &op);
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+		if (!is_inode_open_redirect && f && !IS_ERR(f)) {
+			struct inode *inode = file_inode(f);
+			if (SUSFS_IS_INODE_OPEN_REDIRECT_WITHOUT_UID_CHECK(inode)) {
+				fake_filename = susfs_open_redirect_spoof_do_sys_openat(inode);
+				if (fake_filename && !IS_ERR(fake_filename)) {
+					is_inode_open_redirect = true;
+					filp_close(f, NULL);
+					putname(tmp);
+					tmp = fake_filename;
+					goto retry;
+				}
+			}
+		}
+#endif
 		if (IS_ERR(f)) {
 			put_unused_fd(fd);
 			fd = PTR_ERR(f);

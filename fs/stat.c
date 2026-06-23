@@ -17,8 +17,14 @@
 #include <linux/syscalls.h>
 #include <linux/pagemap.h>
 #include <linux/compat.h>
+#ifdef CONFIG_KSU_SUSFS
+#include <linux/susfs_def.h>
+#endif
 
 #include <linux/uaccess.h>
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+extern void susfs_sus_kstat_spoof_generic_fillattr(struct inode *inode, struct kstat *stat);
+#endif
 #include <asm/unistd.h>
 
 /**
@@ -50,6 +56,9 @@ void generic_fillattr(struct inode *inode, struct kstat *stat)
 		stat->result_mask &= ~STATX_ATIME;
 	if (IS_AUTOMOUNT(inode))
 		stat->attributes |= STATX_ATTR_AUTOMOUNT;
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+	susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
+#endif
 }
 EXPORT_SYMBOL(generic_fillattr);
 
@@ -75,11 +84,20 @@ int vfs_getattr_nosec(const struct path *path, struct kstat *stat,
 	stat->result_mask |= STATX_BASIC_STATS;
 	request_mask &= STATX_ALL;
 	query_flags &= KSTAT_QUERY_FLAGS;
-	if (inode->i_op->getattr)
-		return inode->i_op->getattr(path, stat, request_mask,
-					    query_flags);
+	if (inode->i_op->getattr) {
+		int err = inode->i_op->getattr(path, stat, request_mask,
+					       query_flags);
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+		if (!err)
+			susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
+#endif
+		return err;
+	}
 
 	generic_fillattr(inode, stat);
+#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
+	susfs_sus_kstat_spoof_generic_fillattr(inode, stat);
+#endif
 	return 0;
 }
 EXPORT_SYMBOL(vfs_getattr_nosec);

@@ -40,8 +40,14 @@
 #include <linux/init_task.h>
 #include <linux/uaccess.h>
 #include <linux/build_bug.h>
+#if defined(CONFIG_KSU_SUSFS_SUS_PATH) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
+#include <linux/susfs_def.h>
+#endif
 
 #include "internal.h"
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+extern bool susfs_is_inode_sus_path(struct inode *inode);
+#endif
 #include "mount.h"
 
 #define CREATE_TRACE_POINTS
@@ -1609,6 +1615,12 @@ static struct dentry *lookup_dcache(const struct qstr *name,
 			dput(dentry);
 			return ERR_PTR(error);
 		}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+			dput(dentry);
+			return NULL;
+		}
+#endif
 	}
 	return dentry;
 }
@@ -1664,6 +1676,10 @@ static int lookup_fast(struct nameidata *nd,
 		unsigned seq;
 		bool negative;
 		dentry = __d_lookup_rcu(parent, &nd->last, &seq);
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (dentry && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode))
+			dentry = NULL;
+#endif
 		if (unlikely(!dentry)) {
 			if (unlazy_walk(nd))
 				return -ECHILD;
@@ -1712,6 +1728,12 @@ static int lookup_fast(struct nameidata *nd,
 		dentry = __d_lookup(parent, &nd->last);
 		if (unlikely(!dentry))
 			return 0;
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+			dput(dentry);
+			return 0;
+		}
+#endif
 		status = d_revalidate(dentry, nd->flags);
 	}
 	if (unlikely(status <= 0)) {
@@ -1769,6 +1791,12 @@ again:
 			dput(dentry);
 			dentry = old;
 		}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (!IS_ERR(dentry) && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+			dput(dentry);
+			return ERR_PTR(-ENOENT);
+		}
+#endif
 	}
 	return dentry;
 }
@@ -2205,6 +2233,14 @@ static int link_path_walk(const char *name, struct nameidata *nd)
 				name = this.name;
 			}
 		}
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		{
+			struct dentry *dentry = nd->path.dentry;
+			if (dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode))
+				return -ENOENT;
+		}
+#endif
 
 		nd->last.hash_len = hash_len;
 		nd->last.name = name;
@@ -3280,6 +3316,12 @@ static int lookup_open(struct nameidata *nd, struct path *path,
 
 	file->f_mode &= ~FMODE_CREATED;
 	dentry = d_lookup(dir, &nd->last);
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (dentry && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+		dput(dentry);
+		return -ENOENT;
+	}
+#endif
 	for (;;) {
 		if (!dentry) {
 			dentry = d_alloc_parallel(dir, &nd->last, &wq);
@@ -4899,6 +4941,10 @@ out:
  *
  * Does not call security hook.
  */
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+extern int susfs_open_redirect_spoof_vfs_readlink(struct inode *inode, char __user *buffer, int buflen);
+#endif
+
 int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 {
 	struct inode *inode = d_inode(dentry);
@@ -4907,8 +4953,16 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 	int res;
 
 	if (unlikely(!(inode->i_opflags & IOP_DEFAULT_READLINK))) {
-		if (unlikely(inode->i_op->readlink))
+		if (unlikely(inode->i_op->readlink)) {
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+			if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
+				res = susfs_open_redirect_spoof_vfs_readlink(inode, buffer, buflen);
+				if (!res)
+					return res;
+			}
+#endif
 			return inode->i_op->readlink(dentry, buffer, buflen);
+		}
 
 		if (!d_is_symlink(dentry))
 			return -EINVAL;
@@ -4924,6 +4978,15 @@ int vfs_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 		if (IS_ERR(link))
 			return PTR_ERR(link);
 	}
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+	if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
+		res = susfs_open_redirect_spoof_vfs_readlink(inode, buffer, buflen);
+		if (!res) {
+			do_delayed_call(&done);
+			return res;
+		}
+	}
+#endif
 	res = readlink_copy(buffer, buflen, link);
 	do_delayed_call(&done);
 	return res;
